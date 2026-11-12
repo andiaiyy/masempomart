@@ -1,0 +1,144 @@
+@import "tailwindcss";
+
+/* Palette and type: see DESIGN.md at the project root */
+@theme {
+  --color-accent: #0f7a3d;
+  --color-accent-strong: #0b5f2f;
+  --color-accent-soft: #e8f3ec;
+  --color-ink: #191a17;
+  --color-muted: #5c5d57;
+  --color-line: #e3e3dd;
+  --color-tile: #f3f3ef;
+  --color-danger: #b42318;
+  --color-warn: #8a4600;
+  /* Product page ground, from the owner's reference layout */
+  --color-paper: #f7f6f2;
+  /* Geist Sans, the Karueng Trip site's main font; Playfair for product page headings */
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-playfair), ui-serif, Georgia, serif;
+}
+
+/* One page width for the whole shop, so header, footer, shelf and product page share their edges */
+@utility container-page {
+  @apply mx-auto w-full max-w-6xl px-4 sm:px-6;
+}
+
+/* Section titles, after the landing shelf's "OLAHAN BONE": bold, uppercase, widely spaced */
+@utility section-title {
+  @apply font-bold uppercase tracking-[0.28em];
+}
+
+/* Small spaced capitals for labels that should sit behind their values (product page).
+   In the components layer so utilities like tracking-[…] can still adjust it. */
+@layer components {
+  .eyebrow {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+}
+
+:root {
+  color-scheme: light;
+  /* Keep room for the scrollbar on short pages too, so content doesn't jump sideways between pages */
+  scrollbar-gutter: stable;
+}
+
+/* The whole shop sits on the warm paper ground of both reference pages; the header stays white */
+body {
+  background: var(--color-paper);
+  color: var(--color-ink);
+}
+
+/* One visible focus style for every control */
+:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+/* Dual price slider: two range inputs stacked; only their handles take clicks */
+.range-thumb {
+  appearance: none;
+  background: transparent;
+  pointer-events: none;
+}
+.range-thumb::-webkit-slider-thumb {
+  appearance: none;
+  pointer-events: auto;
+  width: 18px;
+  height: 18px;
+  border-radius: 4px;
+  border: 2px solid var(--color-accent);
+  background: #ffffff;
+  cursor: pointer;
+}
+.range-thumb::-moz-range-thumb {
+  pointer-events: auto;
+  width: 14px;
+  height: 14px;
+  border-radius: 4px;
+  border: 2px solid var(--color-accent);
+  background: #ffffff;
+  cursor: pointer;
+}
+
+/* Finger-sized handles on touch screens */
+@media (pointer: coarse) {
+  .range-thumb::-webkit-slider-thumb {
+    width: 28px;
+    height: 28px;
+  }
+  .range-thumb::-moz-range-thumb {
+    width: 24px;
+    height: 24px;
+  }
+}
+
+/* Landing: the jajanan ring turns once every 90 seconds, slow enough to read as drift, not spin.
+   Paused by its button, and still for anyone who asked their device for reduced motion.
+   Drawn at 99%: the art reaches 0.8% past the round clip it turns inside, so nothing gets cut. */
+@keyframes ring-spin {
+  from {
+    transform: rotate(0deg) scale(0.99);
+  }
+  to {
+    transform: rotate(360deg) scale(0.99);
+  }
+}
+.ring-spin {
+  transform: scale(0.99);
+  animation: ring-spin 90s linear infinite;
+  will-change: transform;
+}
+[data-paused] .ring-spin {
+  animation-play-state: paused;
+}
+@media (prefers-reduced-motion: reduce) {
+  .ring-spin {
+    animation: none;
+  }
+}
+
+/* The receipt slides out of the printer slot once, when it first appears (Karueng's receipt timing) */
+@keyframes receipt-print {
+  from {
+    transform: translateY(-100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+.receipt-print {
+  animation: receipt-print 2.6s cubic-bezier(0.33, 0.05, 0.2, 1) 0.2s both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .receipt-print {
+    animation: none;
+  }
+}
+
+/* Prices line up digit for digit */
+.price {
+  font-variant-numeric: tabular-nums;
+}
