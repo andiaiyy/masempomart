@@ -15,7 +15,7 @@ type Load<T> = { state: "idle" | "loading" } | { state: "failed"; message?: stri
 
 const input = "mt-1 h-11 w-full rounded-md border border-line bg-white px-3 text-sm placeholder:text-muted aria-[invalid=true]:border-danger";
 
-/** First message per field from a Laravel 422, keyed without the "customer." prefix */
+/** First message per field from the API's 422, keyed without the "customer." prefix */
 function fieldErrors(errors: Record<string, string[]> | undefined) {
   return Object.fromEntries(Object.entries(errors ?? {}).map(([key, messages]) => [key.replace(/^customer\./, ""), messages[0]]));
 }

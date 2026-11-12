@@ -1,4 +1,4 @@
-/** Shapes returned by the Laravel API (admin/app/Http/Controllers/Api). */
+/** Shapes returned by the admin's API (admin/src/app/api). */
 
 export type Variant = {
   id: number;
@@ -19,7 +19,6 @@ export type Product = {
   images: string[];
   /** Filled on the product page only */
   specs: { label: string; value: string }[];
-  is_featured: boolean;
   price_from: number | null;
   in_stock: boolean;
   variants: Variant[];
@@ -35,7 +34,6 @@ export type Category = {
   id: number;
   name: string;
   slug: string;
-  image: string | null;
   product_count: number;
 };
 

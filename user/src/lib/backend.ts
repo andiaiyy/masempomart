@@ -2,7 +2,7 @@
 const BACKEND_URL = process.env.BACKEND_URL ?? "http://127.0.0.1:8000";
 
 /**
- * GET from the Laravel API during server rendering. Stock changes with every order,
+ * GET from the admin's API during server rendering. Stock changes with every order,
  * so nothing is cached. Returns null on 404; other failures throw and reach error.tsx.
  */
 export async function backend<T>(path: string): Promise<T | null> {

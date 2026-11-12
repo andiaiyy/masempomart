@@ -74,7 +74,7 @@ On 2026-11-11 the owner dropped Midtrans (no gateway fee) for Karueng's way of t
 
 | Decision | Value | Reason |
 |---|---|---|
-| Payment | Bank transfer to the accounts set in the admin (Sales → Shop settings), proof sent on WhatsApp, an admin clicks **Mark paid** | Karueng's flow. No fee per order; the cost is a manual check per order. Stock is held for `SHOP_HOLD_MINUTES` (60) and the receipt shows that deadline in the shopper's own time zone. |
+| Payment | Bank transfer to the accounts set in the admin (Pengaturan), proof sent on WhatsApp, an admin clicks **Tandai lunas** | Karueng's flow. No fee per order; the cost is a manual check per order. Stock is held for `SHOP_HOLD_MINUTES` (60) and the receipt shows that deadline in the shopper's own time zone. |
 | Receipt | Karueng's receipt: dark printer slot, white paper that slides out of it once (2.6 s, none with reduced motion), IBM Plex Mono, dashed rules, item / qty / price table, total, status badge with a coloured dot, torn zigzag bottom edge (drawn with a conic gradient: Karueng's two-gradient version fills solid, so its edge is flat). Header is the Lontara ᨆᨔᨛᨇᨚ with "MASEMPO MART" under it | The owner asked for it to match Karueng's. The Lontara name ties it to the landing title card. |
 | While unpaid | "Transfer ke" boxes with a Salin (copy) button per account, the exact total and deadline, and a green "Kirim bukti transfer via WhatsApp" button with the order code in the message | Karueng's. The WhatsApp button's text is near-black instead of Karueng's white: white on WhatsApp green is under 2:1 contrast. |
 | After payment | Badge turns "Lunas" without a reload (the page re-checks every 5 s); the transfer box is replaced by a barcode drawn from the order code; courier and tracking number appear once shipped | Karueng's. The barcode is decoration only. |
@@ -99,5 +99,20 @@ On 2026-11-12 the owner switched shipping from flat per-kilogram rates to RajaOn
 |---|---|---|
 | Contact | One small block at the very end of the landing page: "TANYA-TANYA DULU?", a line of text, then "WhatsApp" and "Instagram @masempo.mart" as underlined uppercase links | With no header or footer the shop had no contact anywhere. The owner wanted WhatsApp as a link, not a printed number. Same link style as the shelf's filter row. |
 | Unique code | A "Kode unik" line on the receipt above the total, and a sentence saying the last digits are the code | So the shopper understands why the total isn't round, and transfers the exact amount. |
-| Emails | Laravel's mail layout, buttons in the shop green, header linking to the storefront, Indonesian dates in WITA | Plain and readable in every mail app; the receipt itself is on the web. |
+| Emails | One white card on the paper ground, spaced MASEMPO MART header linking to the storefront, item table, buttons in the shop green, Indonesian dates in WITA | Plain and readable in every mail app; the receipt itself is on the web. |
+
+## Admin (2026-11-12)
+
+The owner dropped Laravel/Filament: "use the same stack and theme as user side". The admin is now a Next.js app (folder `admin/`), built the way Karueng's admin is, in the storefront's look.
+
+| Decision | Value | Reason |
+|---|---|---|
+| Look | The storefront's tokens (paper ground, ink, one green accent, warm greys), Geist, white cards with a 16px radius and a thin line, no shadows, page titles in the shelf's spaced capitals ("PESANAN") | One shop, two sides. Filament's orange, dark mode and default font made it feel like another brand. |
+| Brand | Sidebar and login show the landing title card in small: ᨆᨔᨛᨇᨚ in Lontara over "Mart" in Playfair | The owner's name for the shop, as on the landing page. |
+| Language | Bahasa Indonesia: Ringkasan, Pesanan, Produk, Kategori, Stok, Pengaturan, Admin; actions "Tandai lunas", "Tandai dikirim", "Tandai selesai" | Same language as the shop and the owner. |
+| Green | Only on the one action that moves an order or saves a form | Same rule as the storefront: solid green for the main step only. |
+| Order list | Tabs styled like the shelf's filter row (uppercase, count in superscript, underline), search by code, name, phone or the transfer amount from the bank statement | Matching a BNI transfer to an order is the daily job; the unique code makes the amount unique. |
+| Ringkasan | Transfers waiting (with exact amounts), orders to ship, low stock with "Tambah stok" | What needs doing today, in that order. |
+| Products | One page: details, photos (first = card photo, reorder with arrows), variants, the Detail-tab facts; "Lihat di toko" on every product | Every field maps to something on the storefront; fields that did nothing (Featured, category image) are gone. |
+| Stock | Existing variants' stock only changes on the Stok page (positive in, negative out with a reason), logged | The log stays honest; orders change stock by themselves. |
 

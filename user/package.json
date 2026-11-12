@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "concurrently -k -n api,web -c yellow,green \"npm:dev:api\" \"npm:dev:web\"",
-    "dev:api": "cd ../admin/public && php -d zend_extension=opcache -d opcache.enable=1 -d opcache.enable_cli=1 -S 127.0.0.1:8000 ../vendor/laravel/framework/src/Illuminate/Foundation/resources/server.php",
+    "dev:api": "npm --prefix ../admin run dev",
     "dev:web": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
@@ -12,9 +12,9 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "next": "^15.3.0",
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "next": "15.5.29",
+    "react": "19.1.10",
+    "react-dom": "19.1.10"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",

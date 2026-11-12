@@ -1,29 +1,49 @@
-# Masempo Mart: API and admin
+# Masempo Mart admin
 
-Laravel 12 + Filament 3. See the project README one folder up for setup.
+Next.js app with the shop's API (`/api`, read by the storefront in `../user`) and the admin panel (`/`).
+Same stack and look as the storefront; built the way Karueng's admin is (plain Postgres, embedded
+Postgres locally, Vercel Blob for photos, its own login).
 
-- `app/Services/Orders.php`: placing orders, reserving and returning stock, payment and shipping status changes.
-- `app/Services/ShopSettings.php`: bank accounts, WhatsApp, Instagram and the new-order email from the admin's **Shop settings** page.
-- `app/Mail/`: the receipt-link email to the shopper and the new-order email to the shop (Brevo SMTP).
-- `app/Services/RajaOngkir.php`: destination search and courier prices from RajaOngkir's Komerce API v1 (cached).
-- `app/Services/Shipping.php`: parcel weight (packs + packaging) and the courier options, free above `SHOP_FREE_SHIPPING_OVER`.
-- `app/Services/Inventory.php`: restocks and write-offs.
-- `app/Http/Controllers/Api`: the public API the storefront calls.
-- `app/Filament`: the admin panel (products with variants, categories, restocks, orders, staff, dashboard).
+## Run locally
+
+```bash
+npm install
+npm run db:setup     # embedded Postgres in .pglite/, demo snacks, admin@masempo.test / password
+npm run dev          # http://localhost:8000
+npm test             # API and order logic against an in-memory Postgres, fake RajaOngkir and Brevo
+```
+
+Only one process can open `.pglite/` at a time: stop `npm run dev` before running `npm run db:setup`.
+
+## Where things are
+
+| Path | What |
+|---|---|
+| `db/schema.sql` | All tables. Safe to re-run; `scripts/setup-db.mjs` applies it (also before every Vercel build) |
+| `src/lib/orders.ts` | Placing orders, reserving and returning stock (conditional updates in one transaction), unique transfer code, mark paid, expiry, shipping |
+| `src/lib/catalog.ts` | The public catalog the storefront reads |
+| `src/lib/rajaongkir.ts` | Destination search and courier prices (RajaOngkir Komerce API v1), cached in `api_cache` |
+| `src/lib/settings.ts` | Bank accounts, WhatsApp, Instagram, new-order email (admin's Pengaturan page) |
+| `src/lib/mail.ts` | Receipt-link email to the buyer and new-order email to the shop, through Brevo's API |
+| `src/lib/inventory.ts` | Restocks and write-offs |
+| `src/app/api/` | The API (below) |
+| `src/app/(panel)/` | Admin pages: Ringkasan, Pesanan, Produk, Kategori, Stok, Pengaturan, Admin |
 
 ## API
 
-| Method | Path | |
+| Method | Path | What |
 |---|---|---|
-| GET | `/api/categories` | categories with product counts |
-| GET | `/api/products?category=&q=&min_price=&max_price=&in_stock=1&on_sale=1&sort=&page=&per_page=` | products on sale, with variants. `sort`: `price_asc`, `price_desc`, `name`, `newest` (default: featured first). `meta` also carries `price_range` and `counts` (in stock / on promo) for the filter column |
-| GET | `/api/products/{slug}` | one product, with its specifications and the previous / next product in its category |
-| GET | `/api/variants?ids=1,2,3` | current price and stock for cart lines |
-| GET | `/api/shop` | WhatsApp and Instagram links for the storefront |
-| GET | `/api/shipping/options` | free-shipping threshold, hold minutes, whether RajaOngkir is set up |
-| GET | `/api/shipping/destinations?search=` | kecamatan/kelurahan matching a name or postal code (RajaOngkir) |
-| POST | `/api/shipping/quote` | `{destination_id, items: [{variant_id, quantity}]}` → subtotal, weight, courier options (cheapest first) |
-| POST | `/api/checkout` | `{customer: {...}, items: [...]}` plus `shipping: {courier, service}` → order code (packs reserved, receipt waits for the transfer) |
-| GET | `/api/orders/{code}` | the shopper's receipt: status, items, and while unpaid the bank accounts, WhatsApp number and deadline (no address or phone) |
+| GET | `/api/categories` | Shelf tabs with product counts |
+| GET | `/api/products` | `?category=&q=&sort=newest\|best\|price_asc\|price_desc\|name&page=&per_page=&exclude=` |
+| GET | `/api/products/{slug}` | Product with specs, variants and its neighbours |
+| GET | `/api/variants?ids=` | Current price and stock for the cart |
+| GET | `/api/shop` | WhatsApp and Instagram links |
+| GET | `/api/shipping/options` | Hold minutes, free-shipping threshold, whether RajaOngkir is set up |
+| GET | `/api/shipping/destinations?search=` | Kecamatan/kelurahan from RajaOngkir |
+| POST | `/api/shipping/quote` | `{destination_id, items}` → subtotal, weight, courier options |
+| POST | `/api/checkout` | `{customer, items, shipping: {courier, service}}` → order code |
+| GET | `/api/orders/{code}` | The buyer's receipt (no address or phone) |
+| GET | `/api/cron/expire-orders` | Daily Vercel Cron, with `Authorization: Bearer $CRON_SECRET` |
 
-On Vercel, `api/index.php` is the entry point (caches and storage under `/tmp`) and `vercel.json` routes everything else to it; `/api/cron/expire-orders` runs daily with `CRON_SECRET`. See [../DEPLOY.md](../DEPLOY.md).
+Errors come back as `{message, errors?}` with status 422 (validation), 429 (too many requests),
+503 (RajaOngkir not set up or down) or 404.
