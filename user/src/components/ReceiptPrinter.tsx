@@ -111,6 +111,12 @@ export default function ReceiptPrinter({ order }: { order: Order }) {
               <span>Ongkir</span>
               <span className="tabular-nums">{order.shipping === 0 ? "Gratis" : digits(order.shipping)}</span>
             </div>
+            {order.unique_code > 0 && (
+              <div className="flex justify-between gap-3">
+                <span>Kode unik</span>
+                <span className="tabular-nums">{digits(order.unique_code)}</span>
+              </div>
+            )}
           </div>
 
           <Dashed />
@@ -214,15 +220,16 @@ function PaymentInfo({ order }: { order: Order }) {
             ))}
           </ul>
           <p className="mt-3 text-[11px] normal-case text-neutral-600">
-            Transfer tepat Rp {total} sebelum pukul {time(payment.pay_before)}, lalu kirim bukti transfernya. Struk ini berubah jadi lunas
-            setelah kami cek. Tanpa biaya admin.
+            Transfer tepat Rp {total} sebelum pukul {time(payment.pay_before)}, lalu kirim bukti transfernya.
+            {order.unique_code > 0 && ` Tiga angka terakhirnya kode unik (${order.unique_code}), supaya transfermu langsung ketemu pesanan ini.`} Struk
+            ini berubah jadi lunas setelah kami cek. Tanpa biaya admin.
           </p>
         </>
       )}
 
-      {payment.whatsapp ? (
+      {payment.whatsapp_url ? (
         <a
-          href={`https://wa.me/${payment.whatsapp}?text=${encodeURIComponent(`Halo Masempo Mart, ini bukti transfer untuk pesanan ${order.code} (Rp ${total}).`)}`}
+          href={payment.whatsapp_url}
           target="_blank"
           rel="noreferrer"
           className="mt-4 inline-flex min-h-11 items-center justify-center rounded bg-[#25D366] px-3 text-[11px] font-semibold normal-case text-neutral-950 hover:bg-[#1ebe5b]"
@@ -230,7 +237,7 @@ function PaymentInfo({ order }: { order: Order }) {
           Kirim bukti transfer via WhatsApp
         </a>
       ) : (
-        <p className="mt-3 text-[11px] normal-case text-neutral-500">Nomor WhatsApp toko belum diatur. Simpan struk ini dan hubungi toko untuk mengirim bukti transfer.</p>
+        <p className="mt-3 text-[11px] normal-case text-neutral-500">WhatsApp toko belum diatur. Simpan struk ini dan hubungi toko untuk mengirim bukti transfer.</p>
       )}
       <p className="mt-3 text-[11px] tracking-[0.3em] text-neutral-500">{order.code}</p>
     </div>

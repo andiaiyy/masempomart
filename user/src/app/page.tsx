@@ -1,7 +1,7 @@
 import { lontara } from "@/lib/fonts";
 import { backend } from "@/lib/backend";
 import { pick, shelfApiQuery } from "@/lib/catalog";
-import type { Category, ProductPage } from "@/lib/types";
+import type { Category, ProductPage, ShopContact } from "@/lib/types";
 import LandingCatalog from "@/components/landing/LandingCatalog";
 import SpinningRing from "@/components/landing/SpinningRing";
 
@@ -20,9 +20,10 @@ const TAGLINE = "Produk olahan Bone, dikirim ke seluruh Indonesia";
 export default async function LandingPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   // ?category= / ?sort= / ?q= open the shelf on that tab, order or search (links from product pages and the cart)
   const params = pick(await searchParams);
-  const [products, categories] = await Promise.all([
+  const [products, categories, contact] = await Promise.all([
     backend<ProductPage>(`/products?${shelfApiQuery(params)}`),
     backend<Category[]>("/categories"),
+    backend<ShopContact>("/shop"),
   ]);
   const showShelf = products && (products.meta.total > 0 || params.category || params.q);
 
@@ -67,6 +68,43 @@ export default async function LandingPage({ searchParams }: { searchParams: Prom
         // Keyed so a link to another tab or search (same page, new params) starts the shelf fresh
         <LandingCatalog key={`${params.category}|${params.sort}|${params.q}`} categories={categories ?? []} initial={products} params={params} />
       )}
+
+      {contact && (contact.whatsapp_url || contact.instagram_url) && <ContactLinks contact={contact} />}
     </>
+  );
+}
+
+/**
+ * The shop's only contact spot now that there's no footer (owner's request, 2026-11-12): WhatsApp
+ * as a link (the number stays out of sight) and Instagram, styled like the shelf's filter row.
+ */
+function ContactLinks({ contact }: { contact: ShopContact }) {
+  const link = "inline-flex h-11 items-center text-[13px] uppercase text-muted underline decoration-1 underline-offset-[5px] hover:text-ink";
+  return (
+    <section aria-labelledby="kontak" className="container-page pb-28 text-center">
+      {/* Line inside the page padding, so it lines up with the shelf above */}
+      <div className="border-t border-line pt-10">
+        <h2 id="kontak" className="section-title text-sm">
+          Tanya-tanya dulu?
+        </h2>
+        <p className="mt-2 text-sm text-muted">Stok, pesanan banyak, atau oleh-oleh untuk acara: chat kami.</p>
+        <ul className="mt-3 flex flex-wrap justify-center gap-x-8">
+          {contact.whatsapp_url && (
+            <li>
+              <a href={contact.whatsapp_url} target="_blank" rel="noreferrer" className={link}>
+                WhatsApp
+              </a>
+            </li>
+          )}
+          {contact.instagram_url && (
+            <li>
+              <a href={contact.instagram_url} target="_blank" rel="noreferrer" className={link}>
+                Instagram {contact.instagram_handle}
+              </a>
+            </li>
+          )}
+        </ul>
+      </div>
+    </section>
   );
 }

@@ -92,6 +92,7 @@ class OrderResource extends Resource
                         ? trim(RajaOngkir::courierName($record->shipping_courier).' '.$record->shipping_service.($record->shipping_etd ? " · {$record->shipping_etd}" : ''))
                         : null)
                     ->placeholder('-'),
+                TextEntry::make('unique_code')->label('Unique code')->helperText('Already in the total; the last digits of the transfer.'),
                 TextEntry::make('total')->money('IDR', locale: 'id'),
                 TextEntry::make('weight_grams')->label('Parcel weight')->formatStateUsing(fn (int $state) => number_format($state / 1000, 2, ',', '.').' kg'),
                 TextEntry::make('paid_at')->dateTime('d M Y H:i')->placeholder('-'),

@@ -6,6 +6,8 @@ Online snack shop. Built from the Haiyin codebase (Next.js storefront + Laravel/
 - **No overselling:** placing an order takes its packs out of stock in the same database statement that checks there are enough. Unpaid orders give the packs back when the transfer deadline passes or the order is cancelled.
 - **Shipping from RajaOngkir:** at checkout the shopper searches their kecamatan/kelurahan (RajaOngkir's destination list), sees every courier service with its price and delivery estimate for the parcel's weight, and picks one. The server prices the order again from RajaOngkir, so a tampered price can't get through. Answers are cached (searches a week, prices 12 hours) to spare the API quota.
 - **Bank transfer, no gateway fee** (the same way Karueng takes payment): guest checkout lands on a printed receipt listing the shop's bank accounts. The shopper transfers the exact total and sends the proof over WhatsApp; an admin checks it and clicks **Mark paid**, and the receipt turns "Lunas" on its own.
+- **Unique transfer code:** every order's total gets 1–999 rupiah added, picked so no two unpaid orders ask for the same amount; each transfer in the bank statement points to one order.
+- **Emails through Brevo:** the shopper gets their receipt link (so closing the tab doesn't lose it) with the amount and account; the shop gets a new-order email with what to pack, where it goes, and the amount to look for.
 
 | Folder | What | Stack |
 |---|---|---|
@@ -43,7 +45,9 @@ RAJAONGKIR_COURIERS=jne:jnt:sicepat:pos:tiki:ninja:lion
 
 Find the origin id with `cd admin && php artisan rajaongkir:search "Tanete Riattang"` (any kecamatan, kelurahan or postal code), then `php artisan config:clear` if you cached config. Courier codes are RajaOngkir's (jne, jnt, sicepat, pos, tiki, ninja, lion, ide, sap, wahana, sentral, rex, spx); up to 7 are priced per API call.
 
-**Payments:** add the shop's bank accounts and the WhatsApp number for transfer proofs in the admin under **Sales → Payment details**. Until then the receipt says the account details aren't available yet. To confirm a transfer, open the order in the admin and click **Mark paid** (it also works after the deadline passed, as long as the packs are still in stock).
+**Shop settings** (admin → **Sales → Shop settings**): bank accounts for the receipt, the WhatsApp contact (a number, or a WhatsApp link), Instagram, and the email that hears about new orders. To confirm a transfer, open the order in the admin and click **Mark paid** (it also works after the deadline passed, as long as the packs are still in stock).
+
+**Email:** locally `MAIL_MAILER=log` writes emails to `admin/storage/logs/laravel.log`. To send for real, put Brevo's SMTP login and key in `admin/.env` (see `admin/.env.example`).
 
 **Speed:** `start.cmd` and `npm run dev` start PHP's built-in server with OPcache switched on for that process (`php -d zend_extension=opcache …`), because without it each API request took 4-6 seconds on the development machine and about 0.2 s with it. `php artisan serve` works too, just slower unless OPcache is on in your `php.ini`. The built-in server handles one request at a time, which is fine locally; production runs PHP-FPM or similar.
 
@@ -70,6 +74,6 @@ cd user && npm run typecheck && npm run lint
 
 ## Production notes
 
-The hosting plan follows the Karueng GCP diagram: both apps as containers on Cloud Run (Jakarta), Postgres on Cloud SQL (`DB_CONNECTION=pgsql`), product photos on Cloudflare R2 through Laravel's S3 driver (`SHOP_MEDIA_DISK=s3`, see `admin/.env.example`). Set `BACKEND_URL` on the storefront to the admin service's URL, and `TRUSTED_PROXIES=*` on the admin service.
+Hosting is on Vercel for now: two projects from this repository (`admin` on the PHP runtime, `user` as Next.js), Postgres on Neon, product photos on Cloudflare R2, email through Brevo. Step by step in [DEPLOY.md](DEPLOY.md).
 
-Not built yet: order confirmation emails, booking the courier pickup through an API (the admin types the resi by hand), and a shop logo (the name only appears in the landing page's title card).
+Not built yet: emails when an order is paid or shipped (the receipt page shows both), booking the courier pickup through an API (the admin types the resi by hand), and a shop logo (the name only appears in the landing page's title card).

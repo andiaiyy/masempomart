@@ -74,7 +74,7 @@ On 2026-11-11 the owner dropped Midtrans (no gateway fee) for Karueng's way of t
 
 | Decision | Value | Reason |
 |---|---|---|
-| Payment | Bank transfer to the accounts set in the admin (Sales → Payment details), proof sent on WhatsApp, an admin clicks **Mark paid** | Karueng's flow. No fee per order; the cost is a manual check per order. Stock is held for `SHOP_HOLD_MINUTES` (60) and the receipt shows that deadline in the shopper's own time zone. |
+| Payment | Bank transfer to the accounts set in the admin (Sales → Shop settings), proof sent on WhatsApp, an admin clicks **Mark paid** | Karueng's flow. No fee per order; the cost is a manual check per order. Stock is held for `SHOP_HOLD_MINUTES` (60) and the receipt shows that deadline in the shopper's own time zone. |
 | Receipt | Karueng's receipt: dark printer slot, white paper that slides out of it once (2.6 s, none with reduced motion), IBM Plex Mono, dashed rules, item / qty / price table, total, status badge with a coloured dot, torn zigzag bottom edge (drawn with a conic gradient: Karueng's two-gradient version fills solid, so its edge is flat). Header is the Lontara ᨆᨔᨛᨇᨚ with "MASEMPO MART" under it | The owner asked for it to match Karueng's. The Lontara name ties it to the landing title card. |
 | While unpaid | "Transfer ke" boxes with a Salin (copy) button per account, the exact total and deadline, and a green "Kirim bukti transfer via WhatsApp" button with the order code in the message | Karueng's. The WhatsApp button's text is near-black instead of Karueng's white: white on WhatsApp green is under 2:1 contrast. |
 | After payment | Badge turns "Lunas" without a reload (the page re-checks every 5 s); the transfer box is replaced by a barcode drawn from the order code; courier and tracking number appear once shipped | Karueng's. The barcode is decoration only. |
@@ -92,4 +92,12 @@ On 2026-11-12 the owner switched shipping from flat per-kilogram rates to RajaOn
 | Search box | A combobox: arrow keys and Enter pick, Escape closes, results announced by a polite live hint | Keyboard and screen reader use. Enter in the box never submits the checkout. |
 | Receipt | A "Pengiriman" row: courier, service and estimate | The shopper sees what they paid for; the admin's "Mark shipped" form starts on that courier. |
 | Not set up | Until `RAJAONGKIR_API_KEY` and `RAJAONGKIR_ORIGIN` are set, checkout says shipping can't be calculated and the order button is off | Better than letting the shopper fill the whole form first. |
+
+## Contact and transfer code (2026-11-12)
+
+| Decision | Value | Reason |
+|---|---|---|
+| Contact | One small block at the very end of the landing page: "TANYA-TANYA DULU?", a line of text, then "WhatsApp" and "Instagram @masempo.mart" as underlined uppercase links | With no header or footer the shop had no contact anywhere. The owner wanted WhatsApp as a link, not a printed number. Same link style as the shelf's filter row. |
+| Unique code | A "Kode unik" line on the receipt above the total, and a sentence saying the last digits are the code | So the shopper understands why the total isn't round, and transfers the exact amount. |
+| Emails | Laravel's mail layout, buttons in the shop green, header linking to the storefront, Indonesian dates in WITA | Plain and readable in every mail app; the receipt itself is on the web. |
 

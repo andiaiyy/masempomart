@@ -28,5 +28,11 @@ class AppServiceProvider extends ServiceProvider
         RateLimiter::for('checkout', fn (Request $request) => Limit::perMinute(10)->by($request->ip()));
         RateLimiter::for('shipping', fn (Request $request) => Limit::perMinute(90)->by($request->ip()));
         RateLimiter::for('receipt', fn (Request $request) => Limit::perMinute(60)->by($request->ip()));
+
+        // On Vercel each request may run on a different machine, so a photo uploaded in the product
+        // form must wait in the bucket (R2), not on one machine's disk, until the form is saved
+        if (config('shop.media_disk') !== 'public') {
+            config(['livewire.temporary_file_upload.disk' => config('shop.media_disk')]);
+        }
     }
 }

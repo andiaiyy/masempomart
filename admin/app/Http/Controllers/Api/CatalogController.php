@@ -40,7 +40,7 @@ class CatalogController extends Controller
         $scope = Product::listed()
             ->when($request->query('category'), fn ($q, $slug) => $q->whereHas('category', fn ($c) => $c->where('slug', $slug)))
             ->when($request->boolean('featured'), fn ($q) => $q->where('is_featured', true))
-            ->when(trim((string) $request->query('q')), fn ($q, $term) => $q->where('name', 'like', '%'.addcslashes($term, '%_\\').'%'))
+            ->when(trim((string) $request->query('q')), fn ($q, $term) => $q->whereLike('name', '%'.addcslashes($term, '%_\\').'%', caseSensitive: false))
             ->when($request->query('exclude'), fn ($q, $id) => $q->whereKeyNot($id));
 
         $min = $request->integer('min_price') ?: null;

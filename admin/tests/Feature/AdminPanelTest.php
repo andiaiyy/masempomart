@@ -2,7 +2,7 @@
 
 namespace Tests\Feature;
 
-use App\Filament\Pages\PaymentDetails;
+use App\Filament\Pages\ShopSettings;
 use App\Filament\Resources\OrderResource\Pages\ViewOrder;
 use App\Filament\Resources\ProductResource\Pages\CreateProduct;
 use App\Filament\Resources\ProductResource\Pages\EditProduct;
@@ -34,7 +34,7 @@ class AdminPanelTest extends TestCase
         $order = app(Orders::class)->place($this->customer(), [['variant_id' => $variant->id, 'quantity' => 1]], $this->shipping());
 
         foreach (['/', '/products', '/products/create', "/products/{$variant->product_id}/edit", '/categories',
-            '/restocks', "/restocks/create?variant={$variant->id}", '/orders', "/orders/{$order->id}", '/payment-details', '/users'] as $url) {
+            '/restocks', "/restocks/create?variant={$variant->id}", '/orders', "/orders/{$order->id}", '/shop-settings', '/users'] as $url) {
             $this->get($url)->assertOk();
         }
     }
@@ -145,23 +145,27 @@ class AdminPanelTest extends TestCase
         $this->assertSame(3, $variant->fresh()->stock);
     }
 
-    public function test_payment_details_page_saves_accounts_and_whatsapp(): void
+    public function test_shop_settings_page_saves_accounts_contact_and_notify_email(): void
     {
         $this->actingAs(User::factory()->create());
         $undoRepeaterFake = Repeater::fake();
 
-        Livewire::test(PaymentDetails::class)
+        Livewire::test(ShopSettings::class)
             ->fillForm([
                 'bank_accounts' => [['bank' => 'BCA', 'account_number' => '123-456 7890', 'account_name' => 'Masempo Mart']],
                 'payment_whatsapp' => '0812 3456 7890',
+                'instagram_url' => 'https://www.instagram.com/masempo.mart?igsh=MWg5d3d1&utm_source=qr',
+                'order_notify_email' => 'toko@example.com',
             ])
             ->call('save')
             ->assertHasNoFormErrors();
 
         $this->assertSame([['bank' => 'BCA', 'account_number' => '1234567890', 'account_name' => 'Masempo Mart']], Setting::read('bank_accounts'));
         $this->assertSame('6281234567890', Setting::read('payment_whatsapp'));
+        $this->assertSame('https://www.instagram.com/masempo.mart', Setting::read('instagram_url'));
+        $this->assertSame('toko@example.com', Setting::read('order_notify_email'));
 
-        Livewire::test(PaymentDetails::class)
+        Livewire::test(ShopSettings::class)
             ->fillForm(['payment_whatsapp' => 'not a number'])
             ->call('save')
             ->assertHasFormErrors(['payment_whatsapp']);

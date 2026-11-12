@@ -6,10 +6,13 @@ use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Services\Orders;
-use App\Services\Payments;
+use App\Mail\NewOrder;
+use App\Mail\OrderReceipt;
+use App\Services\ShopSettings;
 use App\Services\RajaOngkir;
 use App\Support\Media;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Mail;
 
 /**
  * Guest checkout: the order reserves its packs and the shopper lands on its receipt, which lists the
@@ -17,7 +20,7 @@ use Illuminate\Http\Request;
  */
 class CheckoutController extends Controller
 {
-    public function store(Request $request, Orders $orders)
+    public function store(Request $request, Orders $orders, ShopSettings $settings)
     {
         $data = $request->validate([
             'customer.name' => 'required|string|max:100',
@@ -47,12 +50,13 @@ class CheckoutController extends Controller
         ]);
 
         $order = $orders->place($data['customer'], $data['items'], $data['shipping']);
+        $this->sendEmails($order, $settings);
 
         return response()->json(['code' => $order->code], 201);
     }
 
     /** The order's receipt. The code is the key: anyone holding it sees the status, never the address or phone. */
-    public function show(string $code, Orders $orders, Payments $payments)
+    public function show(string $code, Orders $orders, ShopSettings $settings)
     {
         $order = Order::with('items.product')->where('code', $code)->first();
         if (! $order) {
@@ -70,8 +74,9 @@ class CheckoutController extends Controller
             'status' => $order->status,
             // Where to transfer, only while the order can still be paid
             'payment' => $payable ? [
-                'bank_accounts' => $payments->accounts(),
-                'whatsapp' => $payments->whatsapp(),
+                'bank_accounts' => $settings->accounts(),
+                // Opens the shop's chat with the proof message filled in
+                'whatsapp_url' => $settings->whatsappUrl("Halo Masempo Mart, ini bukti transfer untuk pesanan {$order->code} (Rp ".number_format($order->total, 0, ',', '.').')'),
                 'pay_before' => $order->expires_at,
             ] : null,
             'payment_type' => $order->payment_type,
@@ -82,6 +87,7 @@ class CheckoutController extends Controller
             'shipping_courier' => RajaOngkir::courierName($order->shipping_courier),
             'shipping_service' => $order->shipping_service,
             'shipping_etd' => $order->shipping_etd,
+            'unique_code' => $order->unique_code,
             'total' => $order->total,
             'weight_grams' => $order->weight_grams,
             'created_at' => $order->created_at,
@@ -99,5 +105,26 @@ class CheckoutController extends Controller
                 'quantity' => $item->quantity,
             ]),
         ]);
+    }
+
+    /**
+     * The receipt link to the shopper and a heads-up to the shop. Sent before answering so it also
+     * works on serverless hosting; a mail failure is logged and never undoes the order.
+     */
+    private function sendEmails(Order $order, ShopSettings $settings): void
+    {
+        try {
+            Mail::to($order->email, $order->customer_name)->send(new OrderReceipt($order));
+        } catch (\Throwable $e) {
+            report($e);
+        }
+
+        if ($to = $settings->notifyEmail()) {
+            try {
+                Mail::to($to)->send(new NewOrder($order));
+            } catch (\Throwable $e) {
+                report($e);
+            }
+        }
     }
 }

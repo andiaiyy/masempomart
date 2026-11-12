@@ -347,7 +347,8 @@ export default function CheckoutPage() {
           )}
           {options.state === "ready" && (
             <p className="mt-3 text-xs text-muted">
-              Bayar lewat transfer bank, tanpa biaya admin. Nomor rekening muncul di struk setelah kamu memesan, dan stok pesananmu kami tahan {options.data.hold_minutes} menit.
+              Bayar lewat transfer bank, tanpa biaya admin. Setelah memesan, struk menunjukkan nomor rekening dan total transfer dengan kode unik
+              (tambahan Rp1–999 supaya transfermu langsung ketemu pesananmu). Linknya juga kami kirim ke emailmu, dan stok pesananmu kami tahan {options.data.hold_minutes} menit.
             </p>
           )}
           {options.state === "failed" && (

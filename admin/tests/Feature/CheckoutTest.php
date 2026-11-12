@@ -4,7 +4,10 @@ namespace Tests\Feature;
 
 use App\Models\Order;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use App\Mail\NewOrder;
+use App\Mail\OrderReceipt;
 use App\Models\Setting;
+use Illuminate\Support\Facades\Mail;
 use Tests\TestCase;
 
 class CheckoutTest extends TestCase
@@ -30,8 +33,10 @@ class CheckoutTest extends TestCase
         // 2 × 450 g + 100 g packaging = 1 kg, JNE REG from the (fake) RajaOngkir
         $this->assertSame(1000, $order->weight_grams);
         $this->assertSame(10000, $order->shipping);
+        $this->assertGreaterThanOrEqual(1, $order->unique_code);
+        $this->assertLessThanOrEqual(999, $order->unique_code);
         $this->assertSame(['jne', 'REG', '2-3 hari', self::DESTINATION], [$order->shipping_courier, $order->shipping_service, $order->shipping_etd, $order->destination_id]);
-        $this->assertSame(40000, $order->total);
+        $this->assertSame(40000 + $order->unique_code, $order->total);
         $this->assertSame(8, $variant->fresh()->stock);
         $this->assertTrue($order->expires_at->isFuture());
     }
@@ -147,7 +152,7 @@ class CheckoutTest extends TestCase
 
         $order = Order::sole();
         $this->assertSame(0, $order->shipping);
-        $this->assertSame(50000, $order->total);
+        $this->assertSame(50000 + $order->unique_code, $order->total);
     }
 
     public function test_receipt_lists_where_to_transfer_until_the_order_is_paid(): void
@@ -160,11 +165,55 @@ class CheckoutTest extends TestCase
             ->assertOk()
             ->assertJsonPath('status', 'pending')
             ->assertJsonPath('payment.bank_accounts.0.account_number', '1234567890')
-            ->assertJsonPath('payment.whatsapp', '6281234567890')
+            ->assertJsonPath('payment.whatsapp_url', fn ($url) => str_starts_with($url, 'https://wa.me/6281234567890?text=') && str_contains(rawurldecode($url), $code))
             ->assertJsonPath('payment.pay_before', fn ($at) => now()->addMinutes(config('shop.hold_minutes'))->diffInSeconds($at, true) < 5);
 
         app(\App\Services\Orders::class)->markPaid(Order::sole());
 
         $this->getJson("/api/orders/{$code}")->assertJsonPath('status', 'paid')->assertJsonPath('payment', null);
+    }
+
+
+    public function test_unpaid_orders_with_the_same_amount_get_different_unique_codes(): void
+    {
+        $variant = $this->variant(stock: 50);
+        // Straight to the order service: over HTTP the checkout limit (10 a minute) would stop it
+        foreach (range(1, 20) as $i) {
+            app(\App\Services\Orders::class)->place($this->customer(), [['variant_id' => $variant->id, 'quantity' => 1]], $this->shipping());
+        }
+
+        $orders = Order::all();
+        $this->assertCount(20, $orders->pluck('total')->unique(), 'two unpaid orders ask for the same amount');
+        $orders->each(fn (Order $o) => $this->assertSame($o->subtotal + $o->shipping + $o->unique_code, $o->total));
+    }
+
+    public function test_checkout_emails_the_receipt_link_and_tells_the_shop(): void
+    {
+        Mail::fake();
+        Setting::write('bank_accounts', [['bank' => 'BNI', 'account_number' => '1234567890', 'account_name' => 'Pemilik Toko']]);
+        Setting::write('order_notify_email', 'toko@example.com');
+        config(['shop.storefront_url' => 'https://masempo.test']);
+
+        $code = $this->checkout([['variant_id' => $this->variant()->id, 'quantity' => 1]])->assertCreated()->json('code');
+
+        Mail::assertSent(OrderReceipt::class, function (OrderReceipt $mail) use ($code) {
+            $html = $mail->render();
+
+            return $mail->hasTo('andi@example.com')
+                && str_contains($html, "https://masempo.test/pesanan/{$code}")
+                && str_contains($html, '1234567890')
+                && str_contains($html, number_format($mail->order->total, 0, ',', '.'));
+        });
+        Mail::assertSent(NewOrder::class, fn (NewOrder $mail) => $mail->hasTo('toko@example.com') && str_contains($mail->render(), "/orders/{$mail->order->id}"));
+    }
+
+    public function test_a_failing_mail_server_never_loses_the_order(): void
+    {
+        config(['mail.default' => 'smtp', 'mail.mailers.smtp.host' => '127.0.0.1', 'mail.mailers.smtp.port' => 1, 'mail.mailers.smtp.timeout' => 1]);
+        $this->withoutExceptionHandling();
+
+        $this->checkout([['variant_id' => $this->variant()->id, 'quantity' => 1]])->assertCreated();
+
+        $this->assertSame(1, Order::count());
     }
 }

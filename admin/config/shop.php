@@ -2,6 +2,16 @@
 
 return [
 
+    // The storefront's address, for receipt links in emails
+    'storefront_url' => rtrim(env('STOREFRONT_URL', 'http://localhost:3000'), '/'),
+
+    // Vercel Cron sends this as a bearer token to /api/cron/expire-orders
+    'cron_secret' => env('CRON_SECRET'),
+
+    // Defaults for the admin's Shop settings page, used until something is saved there
+    'instagram_url' => env('SHOP_INSTAGRAM_URL', 'https://www.instagram.com/masempo.mart'),
+    'order_notify_email' => env('SHOP_ORDER_NOTIFY_EMAIL'),
+
     // Minutes an unpaid order keeps its packs reserved while the shopper makes the bank transfer.
     // The receipt shows this deadline. An admin can still mark a late transfer paid afterwards.
     'hold_minutes' => (int) env('SHOP_HOLD_MINUTES', 60),

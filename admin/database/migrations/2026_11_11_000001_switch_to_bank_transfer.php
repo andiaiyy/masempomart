@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\Schema;
 /**
  * Payment moves from Midtrans to bank transfer (no gateway fee): the shopper transfers to one of
  * the shop's accounts and sends the proof over WhatsApp, an admin marks the order paid.
- * The accounts and the WhatsApp number live in `settings`, edited on the admin "Payment details" page.
+ * The accounts and the WhatsApp number live in `settings`, edited on the admin "Shop settings" page.
  */
 return new class extends Migration
 {

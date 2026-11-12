@@ -112,7 +112,8 @@ class Orders
                 'shipping_courier' => $chosen['courier'],
                 'shipping_service' => $chosen['service'],
                 'shipping_etd' => $chosen['etd'] ?: null,
-                'total' => $quote['subtotal'] + $chosen['cost'],
+                'unique_code' => $code = $this->uniqueCode($quote['subtotal'] + $chosen['cost']),
+                'total' => $quote['subtotal'] + $chosen['cost'] + $code,
                 'status' => 'pending',
                 'expires_at' => now()->addMinutes($holdMinutes),
             ]);
@@ -130,6 +131,24 @@ class Orders
 
             return $order;
         });
+    }
+
+    /**
+     * A 1–999 rupiah code for the transfer amount, so no two unpaid orders ask for the same total and
+     * each transfer in the bank statement matches one order. Random, so codes don't reveal order counts.
+     */
+    private function uniqueCode(int $amount): int
+    {
+        $taken = Order::where('status', 'pending')
+            ->whereBetween('total', [$amount + 1, $amount + 999])
+            ->pluck('total')
+            ->map(fn ($total) => $total - $amount)
+            ->flip();
+
+        $free = array_values(array_filter(range(1, 999), fn (int $code) => ! isset($taken[$code])));
+
+        // 999 unpaid orders with the same amount won't happen; if it did, the admin still sees the code
+        return $free ? $free[random_int(0, count($free) - 1)] : random_int(1, 999);
     }
 
     /**

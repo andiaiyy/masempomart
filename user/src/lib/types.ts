@@ -81,7 +81,7 @@ export type Order = {
   code: string;
   status: OrderStatus;
   /** Where to transfer; only while the order can still be paid */
-  payment: { bank_accounts: BankAccount[]; whatsapp: string | null; pay_before: string } | null;
+  payment: { bank_accounts: BankAccount[]; whatsapp_url: string | null; pay_before: string } | null;
   payment_type: string | null;
   customer_name: string;
   city: string;
@@ -96,5 +96,10 @@ export type Order = {
   shipping_courier: string | null;
   shipping_service: string | null;
   shipping_etd: string | null;
+  /** 1–999 rupiah added to the total so the transfer matches this order */
+  unique_code: number;
   items: { name: string; variant_name: string; image: string | null; product_slug: string | null; price: number; quantity: number }[];
 };
+
+/** The shop's contact links, set in the admin's Shop settings */
+export type ShopContact = { whatsapp_url: string | null; instagram_url: string | null; instagram_handle: string | null };
