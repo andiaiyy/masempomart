@@ -6,12 +6,14 @@ export type ShelfParams = {
   category?: string;
   q?: string;
   sort?: string;
+  /** 1-based; left out for the first page */
+  page?: number;
 };
 
 /** Link to the whole shelf */
 export const SHELF = "/#produk";
 
-/** Products per load: even rows at 2, 3 and 4 cards across */
+/** Products per page: even rows at 2, 3 and 4 cards across */
 export const SHELF_PAGE = 12;
 
 export const SHELF_SORTS = [
@@ -24,10 +26,12 @@ const DEFAULT_SORT = "newest";
 export function pick(raw: Record<string, string | string[] | undefined>): ShelfParams {
   const text = (key: string) => (typeof raw[key] === "string" && raw[key]!.trim() ? raw[key]!.trim().slice(0, 100) : undefined);
   const sort = text("sort");
+  const page = Number(text("page"));
   return {
     category: text("category"),
     q: text("q"),
     sort: SHELF_SORTS.some((s) => s.value === sort) ? sort : undefined,
+    page: Number.isInteger(page) && page > 1 && page < 1000 ? page : undefined,
   };
 }
 
@@ -37,13 +41,14 @@ export function shelfHref(params: ShelfParams = {}) {
   if (params.category) qs.set("category", params.category);
   if (params.q) qs.set("q", params.q);
   if (params.sort && params.sort !== DEFAULT_SORT) qs.set("sort", params.sort);
+  if (params.page && params.page > 1) qs.set("page", String(params.page));
   const query = qs.toString();
   return query ? `/?${query}#produk` : SHELF;
 }
 
 /** The same view as a query for GET /api/products */
-export function shelfApiQuery(params: ShelfParams, page = 1) {
-  const qs = new URLSearchParams({ per_page: String(SHELF_PAGE), page: String(page), sort: params.sort ?? DEFAULT_SORT });
+export function shelfApiQuery(params: ShelfParams) {
+  const qs = new URLSearchParams({ per_page: String(SHELF_PAGE), page: String(params.page ?? 1), sort: params.sort ?? DEFAULT_SORT });
   if (params.category) qs.set("category", params.category);
   if (params.q) qs.set("q", params.q);
   return qs.toString();

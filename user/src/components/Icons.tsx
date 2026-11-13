@@ -14,6 +14,26 @@ export function BagIcon({ className = "h-5 w-5" }: Props) {
   );
 }
 
+/** Bag with a plus: "add to cart" on the product page */
+export function BagPlusIcon({ className = "h-5 w-5" }: Props) {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden className={`${base} ${className}`} strokeWidth={1.8} strokeLinejoin="round" strokeLinecap="round">
+      <path d="M5 8h14l-1.1 12H6.1L5 8z" />
+      <path d="M9 10V7a3 3 0 0 1 6 0v3" />
+      <path d="M12 12.5v5M9.5 15h5" />
+    </svg>
+  );
+}
+
+/** Tick: a moment of "added" on the add-to-cart button */
+export function CheckIcon({ className = "h-5 w-5" }: Props) {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden className={`${base} ${className}`} strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
+      <path d="M5 12.5l4.5 4.5L19 7.5" />
+    </svg>
+  );
+}
+
 export function MinusIcon({ className = "h-4 w-4" }: Props) {
   return (
     <svg viewBox="0 0 24 24" aria-hidden className={`${base} ${className}`} strokeWidth={2.2} strokeLinecap="round">

@@ -4,8 +4,8 @@ Next.js 15 (App Router), React 19, Tailwind 4. Text is in Bahasa Indonesia; the 
 
 | Route | |
 |---|---|
-| `/` | landing: the turning jajanan ring and title card, then the product shelf (`#produk`): category tabs, Baru / Terlaris, search results (`?q=`), "Muat lebih banyak". `?category=` / `?sort=` / `?q=` open it on that view |
-| `/produk/[slug]` | product page: photos, variant picker, quantity |
+| `/` | landing: the turning jajanan ring and title card, then the product shelf (`#produk`): category tabs, Baru / Terlaris, search results (`?q=`), numbered pages. `?category=` / `?sort=` / `?q=` / `?page=` open it on that view |
+| `/produk/[slug]` | product page: photos, variant picker, quantity, bag button (add to cart) and "Beli sekarang" |
 | `/keranjang` | cart, re-checked against current prices and stock when opened |
 | `/checkout` | address form with kecamatan search, courier services and prices from RajaOngkir, places the order |
 | `/pesanan/[code]` | the receipt, printed out of a printer slot (after Karueng's): bank accounts and a WhatsApp proof button while unpaid, "Lunas" once an admin confirms, courier and tracking number once shipped |

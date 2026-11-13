@@ -1,23 +1,24 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { shelfApiQuery, shelfHref, SHELF_SORTS, type ShelfParams } from "@/lib/catalog";
+import { shelfApiQuery, shelfHref, SHELF_PAGE, SHELF_SORTS, type ShelfParams } from "@/lib/catalog";
 import type { Category, Product, ProductPage } from "@/lib/types";
 import ProductCard from "../ProductCard";
-import { CrossIcon, SearchIcon, SortIcon } from "../Icons";
+import { ChevronIcon, CrossIcon, SearchIcon, SortIcon } from "../Icons";
 
-type Status = "ready" | "loading" | "failed" | "more" | "moreFailed";
+type Status = "ready" | "loading" | "failed";
 
 /**
  * The shop's product shelf, on the landing page and the only place to browse: spaced title and
  * category tabs with Baru / Terlaris (after the owner's "REAL MEAL" reference), the shop's product
- * cards, and "Muat lebih banyak". Tab, order and search swap the cards in place and are written
- * into the URL (/?category=…#produk), so links into the shelf and page refreshes keep them.
+ * cards, and numbered pages. Tab, order, search and page swap the cards in place and are written
+ * into the URL (/?category=…&page=2#produk), so links into the shelf and page refreshes keep them.
  */
 export default function LandingCatalog({ categories, initial, params }: { categories: Category[]; initial: ProductPage; params: ShelfParams }) {
   const [category, setCategory] = useState(params.category ?? "");
   const [sort, setSort] = useState(params.sort ?? "newest");
   const [q, setQ] = useState(params.q ?? "");
+  const [page, setPage] = useState(params.page ?? 1);
   const [searching, setSearching] = useState(false);
   const [items, setItems] = useState<Product[]>(initial.data);
   const [meta, setMeta] = useState(initial.meta);
@@ -43,7 +44,18 @@ export default function LandingCatalog({ categories, initial, params }: { catego
     if (window.location.hash === "#produk") section.current?.scrollIntoView();
   }, []);
 
-  const view: ShelfParams = { category: category || undefined, sort, q: q || undefined };
+  const view: ShelfParams = { category: category || undefined, sort, q: q || undefined, page };
+  // A new tab, order or search starts on its first page
+  const change = (apply: () => void) => {
+    apply();
+    setPage(1);
+  };
+  // After a page change, bring the top of the shelf back into view once the new cards are in
+  const scrollAfterLoad = useRef(false);
+  const goTo = (target: number) => {
+    scrollAfterLoad.current = true;
+    setPage(target);
+  };
 
   useEffect(() => {
     // The server already rendered the first view
@@ -51,7 +63,7 @@ export default function LandingCatalog({ categories, initial, params }: { catego
       firstRender.current = false;
       return;
     }
-    const current = { category: category || undefined, sort, q: q || undefined };
+    const current = { category: category || undefined, sort, q: q || undefined, page };
     window.history.replaceState(null, "", shelfHref(current));
     let cancelled = false;
     setStatus("loading");
@@ -62,26 +74,16 @@ export default function LandingCatalog({ categories, initial, params }: { catego
         setItems(page.data);
         setMeta(page.meta);
         setStatus("ready");
+        if (scrollAfterLoad.current) {
+          scrollAfterLoad.current = false;
+          section.current?.scrollIntoView({ block: "start" });
+        }
       })
       .catch(() => !cancelled && setStatus("failed"));
     return () => {
       cancelled = true;
     };
-  }, [category, sort, q, attempt]);
-
-  const loadMore = async () => {
-    setStatus("more");
-    try {
-      const res = await fetch(`/api/products?${shelfApiQuery(view, meta.current_page + 1)}`, { headers: { Accept: "application/json" } });
-      if (!res.ok) throw new Error(String(res.status));
-      const page = (await res.json()) as ProductPage;
-      setItems((shown) => [...shown, ...page.data.filter((p) => !shown.some((s) => s.id === p.id))]);
-      setMeta(page.meta);
-      setStatus("ready");
-    } catch {
-      setStatus("moreFailed");
-    }
-  };
+  }, [category, sort, q, page, attempt]);
 
   const tabs = [
     { slug: "", name: "Semua", count: categories.reduce((n, c) => n + c.product_count, 0) },
@@ -113,7 +115,7 @@ export default function LandingCatalog({ categories, initial, params }: { catego
                 key={tab.slug || "semua"}
                 type="button"
                 aria-pressed={active}
-                onClick={() => setCategory(tab.slug)}
+                onClick={() => change(() => setCategory(tab.slug))}
                 // relative: anchors the sr-only count inside the scrolling row, or it would widen the page on phones
                 className={`relative flex h-11 shrink-0 items-center text-[13px] uppercase ${active ? "font-semibold text-ink" : "text-muted hover:text-ink"}`}
               >
@@ -139,7 +141,7 @@ export default function LandingCatalog({ categories, initial, params }: { catego
           >
             <SearchIcon className="h-[18px] w-[18px]" />
           </button>
-          <SortMenu value={sort} onChange={setSort} />
+          <SortMenu value={sort} onChange={(value) => change(() => setSort(value))} />
         </div>
       </div>
 
@@ -150,7 +152,8 @@ export default function LandingCatalog({ categories, initial, params }: { catego
           role="search"
           onSubmit={(e) => {
             e.preventDefault();
-            setQ(String(new FormData(e.currentTarget).get("q") ?? "").trim());
+            const term = String(new FormData(e.currentTarget).get("q") ?? "").trim();
+            change(() => setQ(term));
             setSearching(false);
           }}
           className="mt-4 flex max-w-md gap-2"
@@ -180,7 +183,7 @@ export default function LandingCatalog({ categories, initial, params }: { catego
             Hasil pencarian <span className="font-semibold">“{q}”</span>
             {status !== "loading" && <span className="price text-muted"> · {meta.total} produk</span>}
           </span>
-          <button type="button" onClick={() => setQ("")} className="inline-flex h-11 items-center gap-1.5 font-semibold underline-offset-2 hover:underline">
+          <button type="button" onClick={() => change(() => setQ(""))} className="inline-flex h-11 items-center gap-1.5 font-semibold underline-offset-2 hover:underline">
             <CrossIcon className="h-3.5 w-3.5" />
             Hapus pencarian
           </button>
@@ -210,25 +213,15 @@ export default function LandingCatalog({ categories, initial, params }: { catego
         </ul>
       )}
 
-      {meta.current_page < meta.last_page && (status === "ready" || status === "more" || status === "moreFailed") && (
-        <div className="mt-14 flex flex-col items-center gap-2">
-          <button
-            type="button"
-            onClick={loadMore}
-            disabled={status === "more"}
-            className="h-11 rounded-md border border-ink px-8 text-sm font-semibold hover:bg-ink hover:text-white disabled:opacity-60"
-          >
-            {status === "more" ? "Memuat…" : "Muat lebih banyak"}
-          </button>
-          {status === "moreFailed" && (
-            <p role="alert" className="text-sm text-danger">
-              Produk berikutnya belum bisa dimuat. Coba lagi.
-            </p>
-          )}
-          <p className="price text-xs text-muted">
-            {items.length} dari {meta.total} produk
-          </p>
-        </div>
+      {meta.last_page > 1 && status !== "failed" && (
+        <Pagination
+          page={meta.current_page}
+          last={meta.last_page}
+          total={meta.total}
+          shown={items.length}
+          href={(n) => shelfHref({ ...view, page: n })}
+          onGo={goTo}
+        />
       )}
     </section>
   );
@@ -299,3 +292,94 @@ function SortMenu({ value, onChange }: { value: string; onChange: (sort: string)
     </div>
   );
 }
+
+/** Page numbers to show: all of them when few, otherwise the ends and the neighbours of the current page */
+function pageList(current: number, last: number): (number | "…")[] {
+  if (last <= 7) return Array.from({ length: last }, (_, i) => i + 1);
+  const around = [current - 1, current, current + 1].filter((n) => n > 1 && n < last);
+  return [1, ...(around[0] > 2 ? ["…" as const] : []), ...around, ...(around.at(-1)! < last - 1 ? ["…" as const] : []), last];
+}
+
+/**
+ * Numbered pages under the shelf, in the filter row's style: 13px, the current page dark and
+ * underlined. Real links (/?page=2#produk), so they also open in a new tab; a plain click swaps the
+ * cards in place.
+ */
+function Pagination({
+  page,
+  last,
+  total,
+  shown,
+  href,
+  onGo,
+}: {
+  page: number;
+  last: number;
+  total: number;
+  shown: number;
+  href: (page: number) => string;
+  onGo: (page: number) => void;
+}) {
+  const link = (target: number) => ({
+    href: href(target),
+    onClick: (e: React.MouseEvent<HTMLAnchorElement>) => {
+      // Let modified clicks (new tab, new window) through
+      if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
+      e.preventDefault();
+      onGo(target);
+    },
+  });
+  const cell = "flex h-11 min-w-11 items-center justify-center px-2 text-[13px]";
+  const from = (page - 1) * SHELF_PAGE + 1;
+
+  return (
+    <nav aria-label="Halaman produk" className="mt-14 flex flex-col items-center gap-2">
+      <ul className="flex items-center">
+        <li>
+          {page > 1 ? (
+            <a {...link(page - 1)} aria-label="Halaman sebelumnya" className={`${cell} text-muted hover:text-ink`}>
+              <ChevronIcon direction="left" className="h-4 w-4" />
+            </a>
+          ) : (
+            <span aria-hidden className={`${cell} text-line`}>
+              <ChevronIcon direction="left" className="h-4 w-4" />
+            </span>
+          )}
+        </li>
+        {pageList(page, last).map((n, i) =>
+          n === "…" ? (
+            <li key={`gap-${i}`} aria-hidden className={`${cell} text-muted`}>
+              …
+            </li>
+          ) : (
+            <li key={n}>
+              <a
+                {...link(n)}
+                aria-label={`Halaman ${n}`}
+                aria-current={n === page ? "page" : undefined}
+                className={`${cell} price ${n === page ? "font-semibold text-ink underline decoration-1 underline-offset-[5px]" : "text-muted hover:text-ink"}`}
+              >
+                {n}
+              </a>
+            </li>
+          ),
+        )}
+        <li>
+          {page < last ? (
+            <a {...link(page + 1)} aria-label="Halaman berikutnya" className={`${cell} text-muted hover:text-ink`}>
+              <ChevronIcon direction="right" className="h-4 w-4" />
+            </a>
+          ) : (
+            <span aria-hidden className={`${cell} text-line`}>
+              <ChevronIcon direction="right" className="h-4 w-4" />
+            </span>
+          )}
+        </li>
+      </ul>
+      <p className="price text-xs text-muted">
+        {from}–{from + shown - 1} dari {total} produk
+      </p>
+    </nav>
+  );
+}
+

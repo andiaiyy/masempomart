@@ -36,13 +36,18 @@ export default async function LandingPage({ searchParams }: { searchParams: Prom
 
             {/* Fills the ring's centre (54.4% of the artwork) and stays still while the ring turns */}
             <div className="absolute left-1/2 top-1/2 flex aspect-square w-[55%] -translate-x-1/2 -translate-y-1/2 flex-col items-center justify-center rounded-full bg-paper px-[6cqw] text-center">
-              <h1 id="judul" className="font-display text-[9.5cqw] leading-[0.95] tracking-tight">
-                {/* "Masempo" in Lontara (Bugis script); screen readers and search engines get the Latin name */}
-                <span lang="bug" aria-hidden="true" className={`${lontara.className} block text-[10cqw] leading-[1.15] tracking-normal`}>
+              <h1 id="judul" className="font-display leading-none tracking-tight">
+                {/* "Masempo" in Lontara (Bugis script); screen readers and search engines get the Latin name.
+                    The font has one weight, so a stroke in the text colour makes it bold (owner, 2026-11-13). */}
+                <span
+                  lang="bug"
+                  aria-hidden="true"
+                  className={`${lontara.className} block text-[12.5cqw] leading-[1.1] tracking-normal [-webkit-text-stroke:0.045em_currentColor]`}
+                >
                   ᨆᨔᨛᨇᨚ
                 </span>
                 <span className="sr-only">Masempo </span>
-                Mart
+                <span className="mt-[0.5cqw] block text-[6cqw]">Mart</span>
               </h1>
               <p className="mt-[3.5cqw] hidden max-w-[36cqw] font-display text-[2.6cqw] italic leading-snug @lg:block">{TAGLINE}</p>
               <a
@@ -66,7 +71,7 @@ export default async function LandingPage({ searchParams }: { searchParams: Prom
 
       {showShelf && (
         // Keyed so a link to another tab or search (same page, new params) starts the shelf fresh
-        <LandingCatalog key={`${params.category}|${params.sort}|${params.q}`} categories={categories ?? []} initial={products} params={params} />
+        <LandingCatalog key={`${params.category}|${params.sort}|${params.q}|${params.page}`} categories={categories ?? []} initial={products} params={params} />
       )}
 
       {contact && (contact.whatsapp_url || contact.instagram_url) && <ContactLinks contact={contact} />}

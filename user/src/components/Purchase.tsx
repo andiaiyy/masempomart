@@ -9,7 +9,7 @@ import { rupiah, weight } from "@/lib/format";
 import { shelfHref } from "@/lib/catalog";
 import Price from "./Price";
 import ShareRow from "./ShareRow";
-import { MinusIcon, PlusIcon } from "./Icons";
+import { BagPlusIcon, CheckIcon, MinusIcon, PlusIcon } from "./Icons";
 
 type Tab = "deskripsi" | "detail";
 
@@ -57,7 +57,8 @@ export default function Purchase({ product }: { product: ProductDetail }) {
     { id: "detail", label: "Detail" },
   ];
 
-  const add = () =>
+  const [justAdded, setJustAdded] = useState(false);
+  const addPacks = (packs: number) =>
     addToCart(
       {
         variantId: variant.id,
@@ -68,8 +69,20 @@ export default function Purchase({ product }: { product: ProductDetail }) {
         image: product.images[0] ?? null,
         stock: variant.stock,
       },
-      qty,
+      packs,
     );
+  // The bag button: adds the chosen packs and shows a tick for a moment
+  const add = () => {
+    addPacks(qty);
+    setJustAdded(true);
+    setTimeout(() => setJustAdded(false), 1500);
+  };
+  // "Beli sekarang": the cart should hold the chosen packs; only what's missing is added, so pressing
+  // the bag first never doubles the order
+  const buyNow = () => {
+    if (qty > inCart) addPacks(qty - inCart);
+    router.push("/checkout");
+  };
 
   return (
     <div>
@@ -186,24 +199,20 @@ export default function Purchase({ product }: { product: ProductDetail }) {
                 <PlusIcon className="h-3.5 w-3.5" />
               </button>
             </div>
-            <button type="button" onClick={add} className="h-12 min-w-0 flex-1 rounded-md bg-accent px-4 text-sm font-semibold text-white hover:bg-accent-strong">
-              Tambah ke keranjang · <span className="price">{rupiah(variant.price * qty)}</span>
+            <button
+              type="button"
+              onClick={add}
+              aria-label={`Tambah ${qty} pak ke keranjang`}
+              title="Tambah ke keranjang"
+              className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-md border border-ink bg-white hover:bg-ink hover:text-white ${justAdded ? "text-accent" : ""}`}
+            >
+              {justAdded ? <CheckIcon className="h-5 w-5" /> : <BagPlusIcon className="h-6 w-6" />}
+            </button>
+            <button type="button" onClick={buyNow} className="h-12 min-w-0 flex-1 rounded-md bg-accent px-4 text-sm font-semibold text-white hover:bg-accent-strong">
+              Beli sekarang · <span className="price">{rupiah(variant.price * qty)}</span>
             </button>
           </div>
           <p className="mt-2 text-center text-xs text-muted">Ongkir dihitung di checkout, dari berat paket dan kecamatan tujuan.</p>
-          <p className="mt-1 text-center">
-            <button
-              type="button"
-              onClick={() => {
-                // Already added with the button above: just go pay, don't add the same packs twice
-                if (inCart === 0) add();
-                router.push("/checkout");
-              }}
-              className="inline-flex h-11 items-center text-sm font-semibold underline underline-offset-4 hover:text-accent"
-            >
-              atau beli sekarang
-            </button>
-          </p>
         </>
       )}
 

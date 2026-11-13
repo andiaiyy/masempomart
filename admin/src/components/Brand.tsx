@@ -4,10 +4,11 @@ import { lontara } from "@/lib/fonts";
 export default function Brand({ size = "md" }: { size?: "md" | "lg" }) {
   return (
     <span className={`inline-flex flex-col leading-none ${size === "lg" ? "items-center" : ""}`}>
-      <span lang="bug" aria-hidden="true" className={`${lontara.className} ${size === "lg" ? "text-4xl" : "text-2xl"}`}>
+      {/* Big, bold Lontara over a small "Mart", as on the landing title card */}
+      <span lang="bug" aria-hidden="true" className={`${lontara.className} [-webkit-text-stroke:0.045em_currentColor] ${size === "lg" ? "text-5xl" : "text-3xl"}`}>
         ᨆᨔᨛᨇᨚ
       </span>
-      <span className={`font-display ${size === "lg" ? "mt-1 text-3xl" : "text-xl"}`}>
+      <span className={`font-display ${size === "lg" ? "mt-1 text-xl" : "text-base"}`}>
         <span className="sr-only">Masempo </span>Mart
       </span>
     </span>
